@@ -28,7 +28,7 @@ preSplit p (a:b) | not (p a) = preSplit p b
                  | otherwise = (a:c) : preSplit p d where
                    (c,d) = break p b
 
-parseSection lx | l == 2 && t1 == "router" = RouterConfig t2Int rtype [] config status
+parseSection lx | l == 2 && t1 == "router" = RouterConfig t2Int rtype links config status
                 | l == 2 && t1 == "link" = LinkConfig t2Int status
                 | otherwise = Unknown t1 where
                   tokens = tokenise . snd . head $ lx
@@ -42,6 +42,9 @@ parseSection lx | l == 2 && t1 == "router" = RouterConfig t2Int rtype [] config 
                   status = maybe AdminUp f (lookup "status" subSections) where
                       f (_,"down":_,_) = AdminDown 
                       f (_,"up":_,_) = AdminUp 
+
+                  links = maybe [] f (lookup "links" subSections) where
+                      f (_,lks,_) = map read lks 
 
                   rtype = maybe DVP f (lookup "type" subSections) where
                       f (_,"dvp":_,_) = DVP 
