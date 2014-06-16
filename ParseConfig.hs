@@ -10,6 +10,11 @@ data ConfigItem =
                   Unknown String |
                   FrameworkConfig deriving Show
 
+isLink (LinkConfig _ _) = True
+isLink _ = False
+isRouter (RouterConfig _ _ _ _ _) = True
+isRouter _ = False
+
 parseConfig :: String -> [ConfigItem]
 parseConfig s = map parseSection sections where
     -- number source lines for helpful error messages
