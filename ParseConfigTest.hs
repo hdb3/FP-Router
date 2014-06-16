@@ -31,13 +31,14 @@ router 3
     if 1 address 301
     if 2 address 302
 router 4
-  type dvp
+  type static
   links 3 5 6
   config
     node address 4
     if 0 address 100
     if 1 address 101
     if 2 address 102
+  status down
 link 1
   status down|]
 
