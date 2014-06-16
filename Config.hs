@@ -2,6 +2,7 @@ module Config where
 import ParseConfig
 import qualified Data.Map as M
 
+fileConfig :: FilePath -> IO ([ConfigItem], M.Map Int (AdminState, [Int]))
 fileConfig f = do
   configData <- readFile f
   putStr "\n  ----------- config data -----------\n"
@@ -26,3 +27,4 @@ fileConfig f = do
           f (Just (_,rix)) = Just (st,rix)
   putStr "\n  ----------- link table -----------\n"
   print linkMap
+  return (routers,linkMap)
