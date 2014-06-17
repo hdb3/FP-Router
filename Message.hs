@@ -24,8 +24,8 @@ newControlChan = do
     rc <- newChan
     return $ ControlChan sc rc
 
-openControlChan :: ControlChan -> ControlChan
-openControlChan (ControlChan sc rc) = ControlChan rc sc
+openControlChan :: ControlChan -> IO ControlChan
+openControlChan (ControlChan sc rc) = return $ ControlChan rc sc
 
 sendControlChan :: ControlChan -> ControlMsg -> IO ()
 sendControlChan chan = writeChan (sendCChan chan)
@@ -33,9 +33,11 @@ sendControlChan chan = writeChan (sendCChan chan)
 recvControlChan :: ControlChan -> IO ControlMsg
 recvControlChan chan = readChan (recvCChan chan)
 
-data ControlMsg = ControlStart | ControlStop | ControlConfig String | ControlLinkInsert NetworkChan
+data ControlMsg = ControlStart | ControlStop | ControlConfig String | ControlLinkInsert NetworkChan deriving Show
 -- newtype ChanC = Chan ControlMsg
 data ControlChan = ControlChan { sendCChan :: Chan ControlMsg , recvCChan :: Chan ControlMsg }
+instance Show ControlChan where
+    show _ = "ControlChan"
 -- data ControlChan = ControlChan { sendCChan :: ChanC , recvCChan :: ChanC }
 
 
@@ -44,6 +46,8 @@ data ControlChan = ControlChan { sendCChan :: Chan ControlMsg , recvCChan :: Cha
 -- newtype ChanN = Chan NetworkMsg
 -- data NetworkChan = NetworkChan { sendChan :: ChanN , recvChan :: ChanN }
 data NetworkChan = NetworkChan { sendChan :: Chan NetworkMsg , recvChan :: Chan NetworkMsg }
+instance Show NetworkChan where
+    show _ = "NetworkChan"
 data NetworkMsg = EchoReq Int Int | EchoRsp Int Int
 
 newNetworkChan :: IO (NetworkChan)
