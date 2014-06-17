@@ -7,15 +7,15 @@ import System.IO
 echoClient chan = do
     myChan <- netRegister chan
     forever $ do
-        s <- netRecv myChan
+        (s,_) <- netRecv myChan
         netSend myChan $ reverse s
 
 main = do
-    chan <- newNetChan :: NetChan String
+    chan <- newNetChan :: IO (NetChan String)
     forkIO $ echoClient chan
     myChan <- netRegister chan
     forever $ do 
         s <- getLine
         netSend myChan s
-        r <- netRecv myChan
+        (r,_) <- netRecv myChan
         putStrLn $ "received: " ++ r

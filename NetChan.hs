@@ -1,5 +1,6 @@
 module NetChan where
 
+import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Chan
 import qualified Data.Map as M
@@ -15,27 +16,32 @@ import qualified Data.Map as M
 data LinkMsg a = LinkMsg LinkAddress a
 type NetQueue a = Chan (LinkMsg a)
 type LinkAddress = ThreadId
-data NetChannel a = NetChannel { chanMap :: M.Map LinkAddress (NetQueue a) }
+type NetChannel a = M.Map LinkAddress (NetQueue a)
 type NetChan a = MVar (NetChannel a)
-type NetReg a = (NetChan a,NetQueue a)
+type NetReg a = (NetChan a,NetQueue a,LinkAddress)
 
-getLinkAddress :: LinkMsg a -> LinkAddress
-getLinkAddress (LinkMsg la _) = la
-netSend :: NetChan a -> a -> IO()
-netSend chan msg = do
-    return ()
-netRecv :: NetChan a -> IO a
-netRecv chan = do
-    return "rubbish"
+netSend :: NetReg a -> a -> IO()
+netSend (nc,q,id) msg = do
+    m <- readMVar nc
+    let qs = M.elems m
+    let send dest = unless (q==dest) (writeChan dest (LinkMsg id msg))
+    mapM_ send qs
+
+netRecv :: NetReg a -> IO (a,LinkAddress)
+netRecv (_,q,_) = do
+     LinkMsg la msg <- readChan q
+     return (msg,la)
+    
 newNetChan :: IO (NetChan a)
 newNetChan = do
-    chan <- newMVar (NetChannel M.empty)
+    chan <- newMVar M.empty
     return chan
 
 netRegister :: NetChan a -> IO (NetReg a)
 netRegister netChan = do
-    id <- myThrreadId
+    id <- myThreadId
     chan <- newChan
     m <- takeMVar netChan
-    let m' = 
-    return(
+    let m' = M.insert id chan m
+    putMVar netChan m'
+    return (netChan,chan,id)
