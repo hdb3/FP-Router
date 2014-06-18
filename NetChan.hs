@@ -3,6 +3,7 @@ module NetChan where
 import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Chan
+import Data.Maybe
 import qualified Data.Map as M
 
 {-
@@ -26,6 +27,13 @@ netSend (nc,q,id) msg = do
     let qs = M.elems m
     let send dest = unless (q==dest) (writeChan dest (LinkMsg id msg))
     mapM_ send qs
+
+netSendTo :: NetReg a -> LinkAddress -> a -> IO()
+netSendTo (nc,_,id) la msg = do
+    m <- readMVar nc
+    let q = M.lookup la m
+    unless (isNothing q)
+           (writeChan (fromJust q) (LinkMsg id msg))
 
 netRecv :: NetReg a -> IO (a,LinkAddress)
 netRecv (_,q,_) = do
