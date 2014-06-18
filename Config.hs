@@ -1,4 +1,4 @@
-module Config where
+module Config (module Config, module ParseConfig) where
 import ParseConfig
 import qualified Data.Map as M
 
