@@ -33,37 +33,7 @@ sendControlChan chan = writeChan (sendCChan chan)
 recvControlChan :: ControlChan -> IO ControlMsg
 recvControlChan chan = readChan (recvCChan chan)
 
-data ControlMsg = ControlStart | ControlStop | ControlConfig String | ControlLinkInsert NetworkChan deriving Show
--- newtype ChanC = Chan ControlMsg
+data ControlMsg = ControlStart | ControlStop deriving Show
 data ControlChan = ControlChan { sendCChan :: Chan ControlMsg , recvCChan :: Chan ControlMsg }
 instance Show ControlChan where
     show _ = "ControlChan"
--- data ControlChan = ControlChan { sendCChan :: ChanC , recvCChan :: ChanC }
-
-
--- network channels
-
--- newtype ChanN = Chan NetworkMsg
--- data NetworkChan = NetworkChan { sendChan :: ChanN , recvChan :: ChanN }
-data NetworkChan = NetworkChan { sendChan :: Chan NetworkMsg , recvChan :: Chan NetworkMsg }
-instance Show NetworkChan where
-    show _ = "NetworkChan"
-data NetworkMsg = EchoReq Int Int | EchoRsp Int Int
-
-newNetworkChan :: IO (NetworkChan)
-newNetworkChan = do
-    sc <- newChan
-    rc <- newChan
-    return $ NetworkChan sc rc
-
-openNetworkChan :: NetworkChan -> IO NetworkChan
-openNetworkChan (NetworkChan sc rc) = do
-    sc' <- dupChan sc
-    return $ NetworkChan rc sc'
-
-sendNetworkChan :: NetworkChan -> NetworkMsg -> IO ()
-sendNetworkChan chan = writeChan (sendChan chan)
-
-recvNetworkChan :: NetworkChan -> IO NetworkMsg
-recvNetworkChan chan = readChan (recvChan chan)
-

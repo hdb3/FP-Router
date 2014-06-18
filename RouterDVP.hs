@@ -3,11 +3,12 @@ module RouterDVP where
 import Message
 import ParseConfig
 import NetChan
+import NetMessage
 import Control.Concurrent
 import Control.Monad
 
 -- router :: ControlChan -> [NetChan a] -> ConfigItem -> IO()
-router :: ControlChan -> [NetChan String] -> ConfigItem -> IO()
+router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
   let ri = rIndex rc
   putStrLn $ "Hello from Router DVP(" ++ show ri ++ ")"
@@ -23,7 +24,7 @@ router cc ncx rc = do
     print msg
   
 timerProcess ri links = forever $ do
-    forM links (\link -> netSend link ("Hello (" ++ show ri ++ ")"))
+    forM links (\link -> netSend link (InfoNM ("Hello (" ++ show ri ++ ")")))
     threadDelay 5000000
 
 ifProcess ri nc = do
