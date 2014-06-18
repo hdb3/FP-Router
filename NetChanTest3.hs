@@ -19,7 +19,6 @@ echoClient start limit chan1 flag = do
 
 main = do
     args <- getArgs
-    -- limit <- if (null args) then readLn else return $ read (args !! 0)
     limit <- if (null args)
              then do
                  putStr "repeat count? "

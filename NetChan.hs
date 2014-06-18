@@ -7,11 +7,10 @@ import Data.Maybe
 import qualified Data.Map as M
 
 {-
-  this is an implementation of a broadcast network with unicast and broadcast facilities
+  this is an implementation of a broadcast network providing both unicast and broadcast sending operations
   it uses the standard Concurrent.Chan channel structures with an addition routing map which allows individual directed messages to be
-  delivered to a single destination, and also broadcast messages to be copied to all interested receivers.
-  The API extension is on the send call, where an optional destination address can be supplied.
-  Additionally, link peers must register on the channel in order to be able to use it.
+  delivered to a single destination, whilst broadcast messages are copied to all registered receivers.
+  link peers must register on the channel in order to be able to use it.
 -}
 
 data LinkMsg a = LinkMsg LinkAddress a
