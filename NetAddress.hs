@@ -9,4 +9,4 @@ module NetAddress where
 
 -}
 
-newtype NetAddress = NetAddress Int deriving (Show,Eq)
+newtype NetAddress = NetAddress Int deriving (Show,Eq,Ord)
