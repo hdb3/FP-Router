@@ -1,5 +1,6 @@
 module RouterDVP where
 
+import RouterContext
 import ParseRouterConfig
 import Message
 import ParseConfig
@@ -12,7 +13,7 @@ import Control.Concurrent
 import Control.Monad
 
 debug = putStrLn
-data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
+-- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
 router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
   let ri = rIndex rc
@@ -55,7 +56,7 @@ protocolProcess (InfoNM msg) src _ = do
 
 protocolProcess (EchoNM msg) src context = do
     -- debug $ "echo msg from " ++ show src ++ " : " ++ show msg
-    processEcho msg (rcAddress context) (routeTable context)
+    processEcho msg context
 
 protocolProcess unknownMsg src _ = do
     debug $ "unknown msg type from " ++ show src ++ " : " ++ show unknownMsg
