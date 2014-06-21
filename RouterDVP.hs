@@ -5,14 +5,16 @@ import ParseConfig
 import NetChan
 import NetMessage
 import RouteTable
+import Echo
 import Control.Concurrent
 import Control.Monad
 
+debug = putStrLn
 data RouterContext = RouterContext {rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
 router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
   let ri = rIndex rc
-  putStrLn $ "Hello from Router DVP(" ++ show ri ++ ")"
+  debug $ "Hello from Router DVP(" ++ show ri ++ ")"
   routeTable <- newRouteTable
   controlChannel <- openControlChan cc
   let recv = recvControlChan controlChannel
@@ -23,7 +25,7 @@ router cc ncx rc = do
   forkIO (timerProcess routerContext)
   forever $ do
     msg <- recv
-    putStrLn "DVP - control message received"
+    debug "DVP - control message received"
     print msg
   
 timerProcess context = forever $ do
@@ -36,14 +38,15 @@ ifProcess context li = do
        let myLink = (!!) (rcLinks context) li
        let myRouter = rIndex.rcConfig $ context
        (msg,src) <- netRecv myLink
-       -- putStrLn $ "recv: " ++ show myRouter ++ "/" ++ show li ++ " : " ++ show msg
+       -- debug $ "recv: " ++ show myRouter ++ "/" ++ show li ++ " : " ++ show msg
        protocolProcess msg src context
 
 protocolProcess (InfoNM msg) src _ = do
-    putStrLn $ "info msg from " ++ show src ++ " : " ++ show msg
+    debug $ "info msg from " ++ show src ++ " : " ++ show msg
 
 protocolProcess (EchoNM msg) src context = do
-    putStrLn $ "echo msg from " ++ show src ++ " : " ++ show msg
+    -- debug $ "echo msg from " ++ show src ++ " : " ++ show msg
+    processEcho msg (routeTable context)
 
 protocolProcess unknownMsg src _ = do
-    putStrLn $ "unknown msg type from " ++ show src ++ " : " ++ show unknownMsg
+    debug $ "unknown msg type from " ++ show src ++ " : " ++ show unknownMsg
