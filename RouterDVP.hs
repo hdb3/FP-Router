@@ -11,6 +11,7 @@ import RouteTable
 import Echo
 import Control.Concurrent
 import Control.Monad
+import Data.List
 
 debug = putStrLn
 -- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
@@ -37,6 +38,13 @@ router cc ncx rc = do
     msg <- recvControlChan controlChannel
     debug "DVP - control message received"
     print msg
+    processControl msg controlChannel
+
+processControl (Command tokens) cchan = do
+    putStrLn $ intercalate " / " tokens
+    -- putStrLn $ intercalate tokens " / "
+    sendControlChan cchan (Response "I can\'t do much either")
+
   
 timerProcess context = forever $ do
     let myRouter = rIndex.rcConfig $ context

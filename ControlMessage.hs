@@ -33,7 +33,7 @@ sendControlChan chan = writeChan (sendCChan chan)
 recvControlChan :: ControlChan -> IO ControlMsg
 recvControlChan chan = readChan (recvCChan chan)
 
-data ControlMsg = ControlStart | ControlStop deriving Show
+data ControlMsg = ControlStart | ControlStop | Command [String] | Response String deriving Show
 data ControlChan = ControlChan { sendCChan :: Chan ControlMsg , recvCChan :: Chan ControlMsg }
 instance Show ControlChan where
     show _ = "ControlChan"
