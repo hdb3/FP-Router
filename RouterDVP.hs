@@ -9,6 +9,7 @@ import NetMessage
 import NetAddress
 import RouteTable
 import Echo
+import EchoRequest
 import Control.Concurrent
 import Control.Monad
 import Data.List
@@ -22,8 +23,9 @@ router cc ncx rc = do
   routeTable <- newRouteTable
   controlChannel <- openControlChan cc
   links <- forM ncx netRegister
+  echoRequestTable <- newEchoRequestTable
 
-  let routerContext = RouterContext name address rc links routeTable where
+  let routerContext = RouterContext name address rc links routeTable echoRequestTable where
       address = read $ nodeAttr "address" localConfig :: NetAddress
       name = nodeAttr "name" localConfig
 
@@ -38,13 +40,24 @@ router cc ncx rc = do
     msg <- recvControlChan controlChannel
     debug "DVP - control message received"
     print msg
-    processControl msg controlChannel
+    processControl msg controlChannel routerContext
 
-processControl (Command tokens) cchan = do
-    putStrLn $ intercalate " / " tokens
+processControl (Command tokens) cchan rc = do
+    -- putStrLn $ intercalate " / " tokens
     -- putStrLn $ intercalate tokens " / "
-    sendControlChan cchan (Response "I can\'t do much either")
+    -- response <- command tokens rc
+    -- sendControlChan cchan (Response response)
+    command tokens rc (\response -> sendControlChan cchan (Response response))
+    -- sendControlChan cchan (Response "I can\'t do much either")
 
+command ("ping":target:_) rc f = do
+    let targetAddress = NetAddress $ read target
+    request <- echoRequest rc targetAddress
+    maybe (f "request rejected")
+          (\rq -> do
+                  result <- takeMVar rq
+                  f $ maybe "request rejected" show result )
+          request
   
 timerProcess context = forever $ do
     let myRouter = rIndex.rcConfig $ context
@@ -63,7 +76,6 @@ protocolProcess (InfoNM msg) src _ = do
     debug $ "info msg from " ++ show src ++ " : " ++ show msg
 
 protocolProcess (EchoNM msg) src context = do
-    -- debug $ "echo msg from " ++ show src ++ " : " ++ show msg
     processEcho msg context
 
 protocolProcess unknownMsg src _ = do
