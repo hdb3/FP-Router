@@ -56,6 +56,7 @@ parseSection lx | l == 2 && t1 == "router" = RouterConfig t2Int rtype links conf
                       f (_,"static":_,_) = Static
 
                   config = maybe "" f (lookup "config" subSections) where
+                      -- apply de-indentation to the config lines
                       f (_,_,s) = unlines . map (drop (minimum . map (length . (takeWhile isSpace)) $ s)) $ s
 
 -- this function tokenises the first line of each sub-section and makes the first token a key for lookup
