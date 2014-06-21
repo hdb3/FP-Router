@@ -10,3 +10,5 @@ module NetAddress where
 -}
 
 newtype NetAddress = NetAddress Int deriving (Show,Eq,Ord)
+instance Read NetAddress where
+    readsPrec _ s = [ (NetAddress (read s), "") ] where
