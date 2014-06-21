@@ -2,7 +2,7 @@ module RouterDVP where
 
 import RouterContext
 import ParseRouterConfig
-import Message
+import ControlMessage
 import ParseConfig
 import NetChan
 import NetMessage

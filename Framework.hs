@@ -5,7 +5,7 @@ import System.Exit
 import qualified Data.Map as M
 import Control.Concurrent
 import Control.Monad
-import Message
+import ControlMessage
 import Config
 import RouterDVP
 import RouterStatic

@@ -1,6 +1,6 @@
 module RouterStatic where
 
-import Message
+import ControlMessage
 import ParseConfig
 import NetChan
 import Control.Concurrent

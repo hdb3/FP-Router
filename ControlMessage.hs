@@ -1,4 +1,4 @@
-module Message where
+module ControlMessage where
 import Control.Concurrent.Chan
 
 {-
