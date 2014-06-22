@@ -2,11 +2,11 @@ module RouterStatic where
 
 import ControlMessage
 import ParseConfig
-import NetChan
+import Link
 import Control.Concurrent
 import Control.Monad
 
-router :: ControlChan -> [NetChan a] -> ConfigItem -> IO()
+router :: ControlChan -> [LinkChannel a] -> ConfigItem -> IO()
 router cc ncx rc = do
   putStrLn "Hello from RouterStatic"
   controlChannel <- openControlChan cc

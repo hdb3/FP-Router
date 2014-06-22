@@ -4,7 +4,7 @@ import RouterContext
 import ParseRouterConfig
 import ControlMessage
 import ParseConfig
-import NetChan
+import Link
 import NetMessage
 import NetAddress
 import RouteTable
@@ -16,14 +16,14 @@ import Data.List
 import DVP
 
 debug rc s = putStrLn $ rcName rc ++ ":> " ++ s
--- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
-router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
+-- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [Link NetMessage], routeTable :: RouteTable}
+router :: ControlChan -> [LinkChannel NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
   let ri = rIndex rc
   let localConfig = parseRouter (rConfig rc)
   routeTable <- newRouteTable []
   controlChannel <- openControlChan cc
-  links <- forM ncx netRegister
+  links <- forM ncx linkAttach
   echoRequestTable <- newEchoRequestTable
   dvpTable <- newDVPTable
 
@@ -71,7 +71,7 @@ command ("ping":target:_) rc f = do
   
 timerProcess context = forever $ do
     let myRouter = rIndex.rcConfig $ context
-    -- forM (rcLinks context) (\link -> netSend link (InfoNM ("Hello (" ++ show myRouter ++ ")")))
+    -- forM (rcLinks context) (\link -> linkSend link (InfoNM ("Hello (" ++ show myRouter ++ ")")))
     threadDelay 5000000
 
 dvpTimerProcess context = forever $ do
@@ -82,18 +82,18 @@ dvpTimerProcess context = forever $ do
     let hostRoute = DVPRoute myAddr linkLocal 0 now
     updateDVPRoute_ hostRoute dvpTable
     dvpVec <- getDVPVec dvpTable
-    forM (rcLinks context) (\link -> netSend link (DVPNM dvpVec))
+    forM (rcLinks context) (\link -> linkSend link (DVPNM dvpVec))
     threadDelay 5000000
 
 ifProcess context li = do
    forever $ do
        let myChan = (!!) (rcLinks context) li
        -- let myRouter = rIndex.rcConfig $ context
-       (msg,src) <- netRecv myChan
+       (msg,src) <- linkRecv myChan
        protocolProcess msg li src context
 
 protocolProcess (DVPNM msg) link src context = do
-    -- debug context $ "DVP msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
+    -- debug context $ "DVP msg from " ++ show src ++ "/link:" ++ show link ++ " : " ++ show msg
     let dvpTable = rcDVPTable context
     now <- nowSeconds
     updateFromDVPMessage_ msg link now dvpTable
@@ -101,10 +101,10 @@ protocolProcess (DVPNM msg) link src context = do
     updateRouteTable_ rt dvpTable
 
 protocolProcess (InfoNM msg) link src context = do
-    debug context $ "info msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
+    debug context $ "info msg from " ++ show src ++ "/link:" ++ show link ++ " : " ++ show msg
 
 protocolProcess (EchoNM msg) _ src context = do
     processEcho msg context
 
 -- protocolProcess unknownMsg link src _ = do
-    -- debug $ "unknown msg type from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show unknownMsg
+    -- debug $ "unknown msg type from " ++ show src ++ "/link:" ++ show link ++ " : " ++ show unknownMsg

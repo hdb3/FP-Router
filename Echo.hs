@@ -2,7 +2,7 @@ module Echo where
 
 import RouterContext
 import RouteTable
-import NetChan
+import Link
 import NetMessage
 import NetAddress
 import Data.Maybe
@@ -25,7 +25,7 @@ echoRequest rc dest = do
                  return Nothing )
         else ( do
               (rq,mv) <- newEchoRequest (rcEchoRequests rc) Nothing
-              netSend link (EchoNM (EchoReq rq src dest))
+              linkSend link (EchoNM (EchoReq rq src dest))
               return $ Just mv)
 
 processEcho :: EchoMsg -> RouterContext -> IO ()
@@ -39,7 +39,7 @@ processEcho msg@(EchoReq id src dest) rc
           let resp = EchoNM (EchoRsp id dest src)
           if isNothing nextHop
               then ( debug rc "no route to return message!!")
-              else ( netSend link resp)
+              else ( linkSend link resp)
      | otherwise = do
           debug rc "echo request for another node received!!"
           nextHop <- getRoute (routeTable rc) dest
@@ -50,8 +50,8 @@ processEcho msg@(EchoReq id src dest) rc
                         let retlink = (rcLinks rc) !! (fromJust nextHop)
                         if isNothing nextHop
                             then  (debug rc "no route to return failure message either!!")
-                            else (netSend retlink ( EchoNM (EchoND id src dest (rcAddress rc)))))
-              else netSend link (EchoNM msg)
+                            else (linkSend retlink ( EchoNM (EchoND id src dest (rcAddress rc)))))
+              else linkSend link (EchoNM msg)
 
 -- data EchoMsg = EchoReq NetAddress NetAddress | EchoRsp NetAddress NetAddress | EchoND NetAddress NetAddress NetAddress deriving Show
 --  process request
@@ -65,6 +65,6 @@ processEcho msg@(EchoRsp id src dest) rc
           let link = (rcLinks rc) !! (fromJust nextHop)
           if isNothing nextHop
               then  (debug rc "no route to return message!!")
-              else netSend link (EchoNM msg)
+              else linkSend link (EchoNM msg)
 
 processEcho msg rc = debug rc $ "echo msg " ++ " : " ++ show msg

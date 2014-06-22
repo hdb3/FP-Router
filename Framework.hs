@@ -10,7 +10,7 @@ import ControlMessage
 import Config
 import RouterDVP
 import RouterStatic
-import NetChan
+import Link
 import Console
 
 framework flag routers links = do
@@ -50,7 +50,7 @@ main = do
     putStrLn $ "Using file " ++ arg1 ++ " for configuration"
     (routers,links) <- fileConfig arg1
 
-    linkList <- forM (M.toList links) (\(k,(st,_)) -> do chan <- newNetChan
+    linkList <- forM (M.toList links) (\(k,(st,_)) -> do chan <- newLinkChannel
                                                          return (k,(st,chan)) )
 
     let linkMap = M.fromList linkList
