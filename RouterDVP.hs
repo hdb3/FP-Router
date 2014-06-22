@@ -13,6 +13,7 @@ import EchoRequest
 import Control.Concurrent
 import Control.Monad
 import Data.List
+import DVP
 
 debug = putStrLn
 -- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
@@ -20,12 +21,13 @@ router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
   let ri = rIndex rc
   let localConfig = parseRouter (rConfig rc)
-  routeTable <- newRouteTable
+  routeTable <- newRouteTable []
   controlChannel <- openControlChan cc
   links <- forM ncx netRegister
   echoRequestTable <- newEchoRequestTable
+  dvpTable <- newDVPTable
 
-  let routerContext = RouterContext name address rc links routeTable echoRequestTable where
+  let routerContext = RouterContext name address rc links routeTable dvpTable echoRequestTable where
       address = read $ nodeAttr "address" localConfig :: NetAddress
       name = nodeAttr "name" localConfig
 
@@ -34,12 +36,13 @@ router cc ncx rc = do
         -- ++ ( unlines $ map show localConfig )
         -- ++ "\n****************\n"
 
-  mapM (\li -> forkIO $ ifProcess routerContext li) [0 .. (length links)-1]
+  mapM (\li -> forkIO $ ifProcess routerContext li) [1 .. (length links)] -- link 0 is the local link address (loopback)
   forkIO (timerProcess routerContext)
+  forkIO (dvpTimerProcess routerContext)
   forever $ do
     msg <- recvControlChan controlChannel
-    debug "DVP - control message received"
-    print msg
+    -- debug "DVP - control message received"
+    -- print msg
     processControl msg controlChannel routerContext
 
 processControl (Command tokens) cchan rc = do
@@ -50,6 +53,10 @@ processControl (Command tokens) cchan rc = do
     command tokens rc (\response -> sendControlChan cchan (Response response))
     -- sendControlChan cchan (Response "I can\'t do much either")
 
+command ("time":_) _ f = do
+    t <- nowSeconds
+    f $ "POSIX time-stamp: " ++ show t
+  
 command ("ping":target:_) rc f = do
     let targetAddress = NetAddress $ read target
     request <- echoRequest rc targetAddress
@@ -61,22 +68,35 @@ command ("ping":target:_) rc f = do
   
 timerProcess context = forever $ do
     let myRouter = rIndex.rcConfig $ context
-    forM (rcLinks context) (\link -> netSend link (InfoNM ("Hello (" ++ show myRouter ++ ")")))
+    -- forM (rcLinks context) (\link -> netSend link (InfoNM ("Hello (" ++ show myRouter ++ ")")))
+    threadDelay 5000000
+
+dvpTimerProcess context = forever $ do
+    let myRouter = rIndex.rcConfig $ context
+    let myAddr = rcAddress context
+    let dvpTable = rcDVPTable context
+    now <- nowSeconds
+    let hostRoute = DVPRoute myAddr linkLocal 0 now
+    updateDVPRoute_ dvpTable hostRoute
+    dvpVec <- getDVPVec dvpTable
+    forM (rcLinks context) (\link -> netSend link (DVPNM dvpVec))
     threadDelay 5000000
 
 ifProcess context li = do
    forever $ do
-       let myLink = (!!) (rcLinks context) li
-       let myRouter = rIndex.rcConfig $ context
-       (msg,src) <- netRecv myLink
-       -- debug $ "recv: " ++ show myRouter ++ "/" ++ show li ++ " : " ++ show msg
-       protocolProcess msg src context
+       let myChan = (!!) (rcLinks context) li
+       -- let myRouter = rIndex.rcConfig $ context
+       (msg,src) <- netRecv myChan
+       protocolProcess msg li src context
 
-protocolProcess (InfoNM msg) src _ = do
-    debug $ "info msg from " ++ show src ++ " : " ++ show msg
+protocolProcess (DVPNM msg) link src _ = do
+    debug $ "DVP msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
 
-protocolProcess (EchoNM msg) src context = do
+protocolProcess (InfoNM msg) link src _ = do
+    debug $ "info msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
+
+protocolProcess (EchoNM msg) _ src context = do
     processEcho msg context
 
-protocolProcess unknownMsg src _ = do
-    debug $ "unknown msg type from " ++ show src ++ " : " ++ show unknownMsg
+-- protocolProcess unknownMsg link src _ = do
+    -- debug $ "unknown msg type from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show unknownMsg

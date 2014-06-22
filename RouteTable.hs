@@ -18,15 +18,22 @@ import Control.Concurrent.MVar
 
   note: the route table is probably not the data structure used by a routing protocol to hold all of its state
         however, for a static router it is all that is required
-  note also: there is an implied static route to the local host address
 
 -}
 
 type IfIndex = Int
+linkLocal = 0 :: IfIndex
 type RouteTable = MVar (M.Map NetAddress IfIndex)
+type Route = (NetAddress,IfIndex)
 
-newRouteTable :: IO RouteTable
-newRouteTable = newMVar M.empty
+newRouteTable :: [(NetAddress,IfIndex)] -> IO RouteTable
+newRouteTable [] = newMVar M.empty
+newRouteTable routes = newMVar (M.fromList routes)
+
+rebuildRouteTable :: RouteTable -> [(NetAddress,IfIndex)] -> IO ()
+rebuildRouteTable rtm routes = do
+    rt <- takeMVar rtm
+    putMVar rtm (M.fromList routes)
 
 addRoute :: RouteTable -> NetAddress -> IfIndex -> IO ()
 addRoute table addr ifindex = do
