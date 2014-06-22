@@ -4,6 +4,7 @@ import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Chan
 import Data.Maybe
+import System.Random
 import qualified Data.Map as M
 
 {-
@@ -16,7 +17,8 @@ import qualified Data.Map as M
 -}
 
 data LinkMsg a = LinkMsg LinkAddress a
-type LinkAddress = ThreadId
+newtype LinkAddress = LinkAddress Int deriving (Eq,Ord,Show)
+allStations = LinkAddress 0
 type LinkQueue a = Chan (LinkMsg a) -- each attached device has its own queue...
                                    -- Chan is defined in Control.Concurrent...
 type LinkChannel_ a = M.Map LinkAddress (LinkQueue a) -- all of the channels attached to the link
@@ -49,7 +51,9 @@ newLinkChannel = do
 
 linkAttach :: LinkChannel a -> IO (LinkInterface a)
 linkAttach netChan = do
-    id <- myThreadId
+    -- id <- myThreadId
+    id' <- randomIO -- :: IO Word32
+    let id = LinkAddress id'
     chan <- newChan
     m <- takeMVar netChan
     let m' = M.insert id chan m
