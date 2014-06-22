@@ -1,4 +1,4 @@
-module EchoRequest(EchoRequestTable,newEchoRequestTable,newEchoRequest) where
+module EchoRequest where
 
 import NetAddress
 import Request

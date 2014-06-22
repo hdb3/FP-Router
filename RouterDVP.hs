@@ -8,14 +8,14 @@ import NetChan
 import NetMessage
 import NetAddress
 import RouteTable
-import Echo
+import Echo hiding (debug)
 import EchoRequest
 import Control.Concurrent
 import Control.Monad
 import Data.List
 import DVP
 
-debug = putStrLn
+debug rc s = putStrLn $ rcName rc ++ ":> " ++ s
 -- data RouterContext = RouterContext { rcName :: String , rcAddress :: NetAddress, rcConfig :: ConfigItem, rcLinks :: [NetReg NetMessage], routeTable :: RouteTable}
 router :: ControlChan -> [NetChan NetMessage] -> ConfigItem -> IO()
 router cc ncx rc = do
@@ -31,7 +31,7 @@ router cc ncx rc = do
       address = read $ nodeAttr "address" localConfig :: NetAddress
       name = nodeAttr "name" localConfig
 
-  debug $ "Hello from Router DVP(" ++ show (rcName routerContext) ++ " at " ++ show (rcAddress routerContext) ++ ")"
+  debug routerContext $ "Hello from Router DVP(" ++ show (rcName routerContext) ++ " at " ++ show (rcAddress routerContext) ++ ")"
         -- ++ "\n****************\nconfig source\n****************\n" ++ (rConfig rc) ++ "****************\n"
         -- ++ ( unlines $ map show localConfig )
         -- ++ "\n****************\n"
@@ -41,8 +41,6 @@ router cc ncx rc = do
   forkIO (dvpTimerProcess routerContext)
   forever $ do
     msg <- recvControlChan controlChannel
-    -- debug "DVP - control message received"
-    -- print msg
     processControl msg controlChannel routerContext
 
 processControl (Command tokens) cchan rc = do
@@ -95,15 +93,15 @@ ifProcess context li = do
        protocolProcess msg li src context
 
 protocolProcess (DVPNM msg) link src context = do
-    -- debug $ "DVP msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
+    -- debug context $ "DVP msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
     let dvpTable = rcDVPTable context
     now <- nowSeconds
     updateFromDVPMessage_ msg link now dvpTable
     let rt = routeTable context
     updateRouteTable_ rt dvpTable
 
-protocolProcess (InfoNM msg) link src _ = do
-    debug $ "info msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
+protocolProcess (InfoNM msg) link src context = do
+    debug context $ "info msg from " ++ show src ++ "/lnk:" ++ show link ++ " : " ++ show msg
 
 protocolProcess (EchoNM msg) _ src context = do
     processEcho msg context
