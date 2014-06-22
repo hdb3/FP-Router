@@ -18,7 +18,6 @@ framework flag routers links = do
     putStrLn $ "I have " ++ show (length routers) ++ " routers and " ++ show (M.size links) ++ " links."
     rtable <- mapM (startRouter links) routers
     console (local rtable) (remote rtable)
-    -- takeMVar flag
     putMVar flag ()
 
 startRouter linkMap rc@(RouterConfig ri rt rlnks conf state) = do
@@ -58,16 +57,3 @@ main = do
     flag <- newEmptyMVar :: IO (MVar ())
     frameworkThread <- forkIO ( framework flag routers linkMap)
     readMVar flag
-{-
-    hSetBuffering stdin NoBuffering
-    consoleLoop flag
--}
-{-
-    consoleLoop where
-        consoleLoop = do
-            c <- getChar
-            if 'q' == c then ( putMVar flag () >> takeMVar flag) else consoleLoop
--}
-consoleLoop flag = do
-    c <- getChar
-    if 'q' == c then ( putMVar flag () >> takeMVar flag) else consoleLoop flag

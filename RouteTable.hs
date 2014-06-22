@@ -22,7 +22,7 @@ import Control.Concurrent.MVar
 -}
 
 type IfIndex = Int
-linkLocal = 0 :: IfIndex
+linkLocal = (-1) :: IfIndex
 type RouteTable = MVar (M.Map NetAddress IfIndex)
 type Route = (NetAddress,IfIndex)
 

@@ -6,17 +6,15 @@ import DVPMessage
 import Data.Time.Clock.POSIX
 import Control.Concurrent.MVar
 
-data DVPRoute = DVPRoute { addr :: NetAddress, link :: Int, cost :: Int, age :: Int }
+data DVPRoute = DVPRoute { addr :: NetAddress, link :: Int, cost :: Int, age :: Int } deriving Show
 
 type Seconds = Int
 type DVPTable = M.IntMap DVPRoute
 type DVPTMVar = MVar DVPTable
-{-
 apply :: (DVPTable -> DVPTable) -> DVPTMVar -> IO()
 apply f dvptm = do
     dvpt <- takeMVar dvptm
     putMVar dvptm (f dvpt)
--}
 
 newDVPTable :: IO DVPTMVar
 newDVPTable = newMVar M.empty
@@ -26,13 +24,17 @@ nowSeconds = do
     pt <- getPOSIXTime
     return $ truncate pt
 
-updateDVPRoute_ :: DVPTMVar -> DVPRoute -> IO ()
-updateDVPRoute_ dvptm route = takeMVar dvptm >>= putMVar dvptm . updateDVPRoute route
+updateDVPRoute_ :: DVPRoute -> DVPTMVar -> IO ()
+-- updateDVPRoute_ route dvptm = takeMVar dvptm >>= putMVar dvptm . updateDVPRoute route
+updateDVPRoute_ a1 = apply $ updateDVPRoute a1
 
 updateDVPRoute :: DVPRoute -> DVPTable -> DVPTable
 updateDVPRoute route table = M.insertWith f k route table where
     k = fromNetAddress $ addr route
     f new old = if cost new < cost old then new else old
+
+updateFromDVPMessage_ :: DVPMsg -> IfIndex -> Seconds -> DVPTMVar -> IO ()
+updateFromDVPMessage_ m i t = apply $ updateFromDVPMessage m i t
 
 updateFromDVPMessage :: DVPMsg -> IfIndex -> Seconds -> DVPTable -> DVPTable
 updateFromDVPMessage dvpvec link time dvpt = foldl (update link time) dvpt dvpvec where
@@ -47,6 +49,9 @@ getDVPVec dvptmv = readMVar dvptmv >>= return . vectorsFromDVP
 
 routesFromDVP :: DVPTable -> [(NetAddress,IfIndex)]
 routesFromDVP dvpt = map (\dvpr -> (addr dvpr, link dvpr)) (M.elems dvpt)
+
+updateRouteTable_ :: RouteTable -> DVPTMVar -> IO ()
+updateRouteTable_  rt dvptm = readMVar dvptm >>= updateRouteTable rt
 
 updateRouteTable :: RouteTable -> DVPTable -> IO ()
 updateRouteTable rt dvpt = rebuildRouteTable rt (routesFromDVP dvpt)

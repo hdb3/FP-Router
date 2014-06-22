@@ -24,10 +24,10 @@ router 3
     if 1 address 301
     if 2 address 302
 router 4
-  type static
+  type dvp
   links 3 5 6 7
   config
-    node static1 address 4
+    node dvp4 address 4
     if 0 address 100
     if 1 address 101
     if 2 address 102
