@@ -16,7 +16,7 @@ import qualified Data.Map as M
   framework.
 -}
 
-data LinkMsg a = LinkMsg LinkAddress a
+data LinkMsg a = LinkMsg (LinkAddress,LinkAddress) a
 newtype LinkAddress = LinkAddress Int deriving (Eq,Ord,Show)
 allStations = LinkAddress 0
 type LinkQueue a = Chan (LinkMsg a) -- each attached device has its own queue...
@@ -29,7 +29,7 @@ linkSend :: LinkInterface a -> a -> IO()
 linkSend (nc,q,id) msg = do
     m <- readMVar nc
     let qs = M.elems m
-    let send dest = unless (q==dest) (writeChan dest (LinkMsg id msg))
+    let send dest = unless (q==dest) (writeChan dest (LinkMsg (id,allStations) msg))
     mapM_ send qs
 
 linkSendTo :: LinkInterface a -> LinkAddress -> a -> IO()
@@ -37,12 +37,12 @@ linkSendTo (nc,_,id) la msg = do
     m <- readMVar nc
     let q = M.lookup la m
     unless (isNothing q)
-           (writeChan (fromJust q) (LinkMsg id msg))
+           (writeChan (fromJust q) (LinkMsg (id,la) msg))
 
-linkRecv :: LinkInterface a -> IO (a,LinkAddress)
+linkRecv :: LinkInterface a -> IO (a,(LinkAddress,LinkAddress))
 linkRecv (_,q,_) = do
-     LinkMsg la msg <- readChan q
-     return (msg,la)
+     LinkMsg srcdest msg <- readChan q
+     return (msg,srcdest)
     
 newLinkChannel :: IO (LinkChannel a)
 newLinkChannel = do
