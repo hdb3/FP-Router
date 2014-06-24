@@ -50,12 +50,11 @@ newLinkChannel = do
     return chan
 
 linkAttach :: LinkChannel a -> IO (LinkInterface a)
-linkAttach netChan = do
-    -- id <- myThreadId
-    id' <- randomIO -- :: IO Word32
+linkAttach linkChan = do
+    id' <- randomIO -- create an arbitrary 'MAC' address for the device
     let id = LinkAddress id'
     chan <- newChan
-    m <- takeMVar netChan
+    m <- takeMVar linkChan
     let m' = M.insert id chan m
-    putMVar netChan m'
-    return (netChan,chan,id)
+    putMVar linkChan m'
+    return (linkChan,chan,id)
